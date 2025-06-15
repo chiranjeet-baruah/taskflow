@@ -7,10 +7,18 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   test:
     name: Test
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       matrix:
         go-version: ['1.24.x']
@@ -61,15 +69,18 @@ jobs:
       run: go test -race -coverprofile=coverage.txt -covermode=atomic ./...
       
     - name: Upload coverage report
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
         file: ./coverage.txt
         flags: unittests
         name: codecov-umbrella
+        # If you use a Codecov token, uncomment and set the secret:
+        # token: ${{ secrets.CODECOV_TOKEN }}
 
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
     - name: Check out code
       uses: actions/checkout@v4
@@ -81,14 +92,16 @@ jobs:
         cache: true
 
     - name: golangci-lint
-      uses: golangci/golangci-lint-action@v3
+      uses: golangci/golangci-lint-action@v6.0.1
       with:
-        version: latest
+        # Optional: version of golangci-lint to use in form of v1.2.3, defaults to latest if not set
+        # version: v1.59
         args: --timeout=5m
 
   build-examples:
     name: Build Examples
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: [test, lint]
     steps:
     - name: Check out code
@@ -102,7 +115,7 @@ jobs:
 
     - name: Build examples
       run: |
-        # Loop through all example directories and build
+        set -e # Exit immediately if a command exits with a non-zero status.
         for dir in examples/*; do
           if [ -d "$dir" ]; then
             echo "Building $dir..."
