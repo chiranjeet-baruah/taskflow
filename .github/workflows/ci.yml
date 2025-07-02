@@ -57,8 +57,6 @@ jobs:
           file: ./coverage.txt
           flags: unittests
           name: codecov-umbrella
-          # If you use a Codecov token, uncomment and set the secret:
-          # token: ${{ secrets.CODECOV_TOKEN }}
 
   lint:
     name: Lint
